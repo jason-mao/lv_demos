@@ -115,7 +115,7 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     lv_obj_t * icon_box = create_icon_box(cont);
     lv_obj_t * ctrl_box = create_ctrl_box(cont);
     lv_obj_t * handle_box = create_handle(cont);
-    spectrum_obj = create_spectrum_obj(cont);
+    // spectrum_obj = create_spectrum_obj(cont);
 
     /*Arrange the content into a grid*/
 #if LV_DEMO_MUSIC_LANDSCAPE == 0
@@ -139,7 +139,7 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     lv_obj_set_style_grid_row_align(cont, LV_GRID_ALIGN_SPACE_BETWEEN, 0);
     lv_obj_set_grid_cell(title_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 2, 1);
     lv_obj_set_grid_cell(icon_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 4, 1);
-    lv_obj_set_grid_cell(spectrum_obj, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 6, 1);
+    // lv_obj_set_grid_cell(spectrum_obj, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 6, 1);
     lv_obj_set_grid_cell(ctrl_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 8, 1);
     lv_obj_set_grid_cell(handle_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 10, 1);
 #else
@@ -166,7 +166,10 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     lv_obj_set_grid_cell(handle_box, LV_GRID_ALIGN_STRETCH, 0, 2, LV_ALIGN_CENTER, 8, 1);
     lv_obj_set_grid_cell(spectrum_obj, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 1, 9);
 #endif
-
+    LV_LOG_USER("is here");
+    sec_counter_timer = lv_timer_create(timer_cb, 1000, NULL);
+    lv_timer_pause(sec_counter_timer);
+#if  0
     sec_counter_timer = lv_timer_create(timer_cb, 1000, NULL);
     lv_timer_pause(sec_counter_timer);
 
@@ -180,6 +183,7 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
 
     lv_anim_init(&a);
     lv_anim_set_path_cb(&a, lv_anim_path_bounce);
+    LV_LOG_USER("is here");
 
     uint32_t i;
     lv_anim_set_exec_cb(&a, start_anim_cb);
@@ -191,6 +195,8 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
         lv_anim_start(&a);
     }
 
+
+    LV_LOG_USER("is here +++++++++++");
     lv_obj_fade_in(title_box, 1000, INTRO_TIME + 1000);
     lv_obj_fade_in(icon_box, 1000, INTRO_TIME + 1000);
     lv_obj_fade_in(ctrl_box, 1000, INTRO_TIME + 1000);
@@ -229,8 +235,9 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     lv_anim_set_values(&a, LV_IMG_ZOOM_NONE, 10);
     lv_anim_set_ready_cb(&a, lv_obj_del_anim_ready_cb);
     lv_anim_start(&a);
-
+#endif
     lv_obj_update_layout(main_cont);
+    LV_LOG_ERROR("is here ---------------------");
 
     return main_cont;
 }
@@ -266,22 +273,20 @@ void _lv_demo_music_play(uint32_t id)
 void _lv_demo_music_resume(void)
 {
     playing = true;
-    spectrum_i = spectrum_i_pause;
-    lv_anim_t a;
-    lv_anim_init(&a);
-    lv_anim_set_values(&a, spectrum_i, spectrum_len - 1);
-    lv_anim_set_exec_cb(&a, spectrum_anim_cb);
-    lv_anim_set_var(&a, spectrum_obj);
-    lv_anim_set_time(&a, ((spectrum_len - spectrum_i) * 1000) / 30);
-    lv_anim_set_playback_time(&a, 0);
-    lv_anim_set_ready_cb(&a, spectrum_end_cb);
-    lv_anim_start(&a);
-
+    // spectrum_i = spectrum_i_pause;
+    // lv_anim_t a;
+    // lv_anim_init(&a);
+    // lv_anim_set_values(&a, spectrum_i, spectrum_len - 1);
+    // lv_anim_set_exec_cb(&a, spectrum_anim_cb);
+    // // lv_anim_set_var(&a, spectrum_obj);
+    // lv_anim_set_time(&a, ((spectrum_len - spectrum_i) * 1000) / 30);
+    // lv_anim_set_playback_time(&a, 0);
+    // lv_anim_set_ready_cb(&a, spectrum_end_cb);
+    // lv_anim_start(&a);
+    LV_LOG_USER("star resume");
     lv_timer_resume(sec_counter_timer);
     lv_slider_set_range(slider_obj, 0, _lv_demo_music_get_track_length(track_id));
-
     lv_obj_add_state(play_obj, LV_STATE_CHECKED);
-
 }
 
 void _lv_demo_music_pause(void)
@@ -289,9 +294,9 @@ void _lv_demo_music_pause(void)
     playing = false;
     spectrum_i_pause = spectrum_i;
     spectrum_i = 0;
-    lv_anim_del(spectrum_obj, spectrum_anim_cb);
-    lv_obj_invalidate(spectrum_obj);
-    lv_img_set_zoom(album_img_obj, LV_IMG_ZOOM_NONE);
+    // lv_anim_del(spectrum_obj, spectrum_anim_cb);
+    // lv_obj_invalidate(spectrum_obj);
+    // lv_img_set_zoom(album_img_obj, LV_IMG_ZOOM_NONE);
     lv_timer_pause(sec_counter_timer);
     lv_obj_clear_state(play_obj, LV_STATE_CHECKED);
 }
@@ -390,10 +395,9 @@ static lv_obj_t * create_title_box(lv_obj_t * parent)
 
     return cont;
 }
-
+static lv_style_t style_icon;
 static lv_obj_t * create_icon_box(lv_obj_t * parent)
 {
-
     lv_obj_t * cont = lv_obj_create(parent);
     lv_obj_remove_style_all(cont);
     lv_obj_set_height(cont, LV_SIZE_CONTENT);
@@ -401,18 +405,22 @@ static lv_obj_t * create_icon_box(lv_obj_t * parent)
     lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
     lv_obj_t * icon;
-    LV_IMG_DECLARE(img_lv_demo_music_icon_1);
-    LV_IMG_DECLARE(img_lv_demo_music_icon_2);
-    LV_IMG_DECLARE(img_lv_demo_music_icon_3);
-    LV_IMG_DECLARE(img_lv_demo_music_icon_4);
+    //LV_SYMBOL_SD_CARD
+    lv_obj_t * call_icn = lv_label_create(cont);
+    lv_obj_add_style(call_icn, &style_icon, 0);
+    lv_label_set_text(call_icn, LV_SYMBOL_SD_CARD);
+
+    LV_IMG_DECLARE(img_lv_music_fm_icon);
     icon = lv_img_create(cont);
-    lv_img_set_src(icon, &img_lv_demo_music_icon_1);
-    icon = lv_img_create(cont);
-    lv_img_set_src(icon, &img_lv_demo_music_icon_2);
-    icon = lv_img_create(cont);
-    lv_img_set_src(icon, &img_lv_demo_music_icon_3);
-    icon = lv_img_create(cont);
-    lv_img_set_src(icon, &img_lv_demo_music_icon_4);
+    lv_img_set_src(icon, &img_lv_music_fm_icon);
+
+    lv_obj_t * setting_icn = lv_label_create(cont);
+    lv_obj_add_style(setting_icn, &style_icon, 0);
+    lv_label_set_text(setting_icn, LV_SYMBOL_SETTINGS);
+
+    lv_obj_t * volume_icn = lv_label_create(cont);
+    lv_obj_add_style(volume_icn, &style_icon, 0);
+    lv_label_set_text(volume_icn, LV_SYMBOL_VOLUME_MAX);
 
     return cont;
 }
@@ -425,7 +433,7 @@ static lv_obj_t * create_spectrum_obj(lv_obj_t * parent)
 #if LV_DEMO_MUSIC_LARGE
     lv_obj_set_height(obj, 500);
 #else
-    lv_obj_set_height(obj, 250);
+    lv_obj_set_height(obj, 200);
 #endif
     lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_add_event_cb(obj, spectrum_draw_event_cb, LV_EVENT_ALL, NULL);
@@ -546,6 +554,7 @@ static lv_obj_t * create_handle(lv_obj_t * parent)
 
 static void track_load(uint32_t id)
 {
+    LV_LOG_ERROR("track_load----->>>>>");
     spectrum_i = 0;
     time = 0;
     spectrum_i_pause = 0;
@@ -567,7 +576,7 @@ static void track_load(uint32_t id)
     lv_label_set_text(genre_label, _lv_demo_music_get_genre(track_id));
 
     lv_obj_fade_out(album_img_obj, 500, 0);
-
+#if 0
     lv_anim_t a;
     lv_anim_init(&a);
     lv_anim_set_var(&a, album_img_obj);
@@ -598,17 +607,18 @@ static void track_load(uint32_t id)
     lv_anim_set_ready_cb(&a, NULL);
     lv_anim_start(&a);
 
-    album_img_obj = album_img_create(spectrum_obj);
-    lv_obj_fade_in(album_img_obj, 500, 100);
+    // album_img_obj = album_img_create(spectrum_obj);
+    // lv_obj_fade_in(album_img_obj, 500, 100);
 
     lv_anim_set_path_cb(&a, lv_anim_path_overshoot);
-    lv_anim_set_var(&a, album_img_obj);
+    // lv_anim_set_var(&a, album_img_obj);
     lv_anim_set_time(&a, 500);
     lv_anim_set_delay(&a, 100);
     lv_anim_set_values(&a, LV_IMG_ZOOM_NONE / 4, LV_IMG_ZOOM_NONE);
     lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_img_set_zoom);
     lv_anim_set_ready_cb(&a, NULL);
     lv_anim_start(&a);
+#endif
 }
 
 int32_t get_cos(int32_t deg, int32_t a)
@@ -785,7 +795,7 @@ static void start_anim_cb(void * a, int32_t v)
 {
     lv_coord_t * av = a;
     *av = v;
-    lv_obj_invalidate(spectrum_obj);
+    // lv_obj_invalidate(spectrum_obj);
 }
 
 static lv_obj_t * album_img_create(lv_obj_t * parent)
@@ -843,14 +853,16 @@ static void play_event_click_cb(lv_event_t * e)
 
 static void prev_click_event_cb(lv_event_t * e)
 {
-    _lv_demo_music_album_next(false);
+    LV_LOG_USER("next_click_event_cb prev");
+    // _lv_demo_music_album_next(false);
 }
 
 static void next_click_event_cb(lv_event_t * e)
 {
     lv_event_code_t code = lv_event_get_code(e);
+    LV_LOG_USER("next_click_event_cb next");
     if(code == LV_EVENT_CLICKED) {
-        _lv_demo_music_album_next(true);
+        // _lv_demo_music_album_next(true);
     }
 }
 
@@ -871,7 +883,7 @@ static void spectrum_end_cb(lv_anim_t * a)
 static void stop_start_anim(lv_timer_t * t)
 {
     start_anim = false;
-    lv_obj_refresh_ext_draw_size(spectrum_obj);
+    // lv_obj_refresh_ext_draw_size(spectrum_obj);
 }
 #endif /*LV_USE_DEMO_MUSIC*/
 
