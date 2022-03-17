@@ -38,7 +38,7 @@ static lv_style_t style_btn_chk;
 static lv_style_t style_btn_dis;
 static lv_style_t style_title;
 static lv_style_t style_artist;
-static lv_style_t style_time;
+// static lv_style_t style_time;
 LV_IMG_DECLARE(img_lv_demo_music_btn_list_play);
 LV_IMG_DECLARE(img_lv_demo_music_btn_list_pause);
 
@@ -68,11 +68,8 @@ lv_obj_t * _lv_demo_music_list_create(lv_obj_t * parent)
     lv_style_set_pad_right(&style_scrollbar, 4);
 
     static const lv_coord_t grid_cols[] = {LV_GRID_CONTENT, LV_GRID_FR(1), LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
-#if LV_DEMO_MUSIC_LARGE
-    static const lv_coord_t grid_rows[] = {35,  30, LV_GRID_TEMPLATE_LAST};
-#else
     static const lv_coord_t grid_rows[] = {22,  17, LV_GRID_TEMPLATE_LAST};
-#endif
+
     lv_style_init(&style_btn);
     lv_style_set_bg_opa(&style_btn, LV_OPA_TRANSP);
     lv_style_set_grid_column_dsc_array(&style_btn, grid_cols);
@@ -103,10 +100,6 @@ lv_obj_t * _lv_demo_music_list_create(lv_obj_t * parent)
     lv_style_init(&style_artist);
     lv_style_set_text_font(&style_artist, font_small);
     lv_style_set_text_color(&style_artist,lv_color_hex(0xb1b0be));
-
-    lv_style_init(&style_time);
-    lv_style_set_text_font(&style_time, font_medium);
-    lv_style_set_text_color(&style_time, lv_color_hex(0xffffff));
 
     /*Create an empty transparent container*/
     list = lv_obj_create(parent);
@@ -147,19 +140,12 @@ void _lv_demo_music_list_btn_check(uint32_t track_id, bool state)
 
 static lv_obj_t * add_list_btn(lv_obj_t * parent, uint32_t track_id)
 {
-    uint32_t t = _lv_demo_music_get_track_length(track_id);
-    char time[32];
-    lv_snprintf(time, sizeof(time), "%d:%02d", t / 60, t % 60);
     const char * title = _lv_demo_music_get_title(track_id);
     const char * artist = _lv_demo_music_get_artist(track_id);
 
     lv_obj_t * btn = lv_obj_create(parent);
     lv_obj_remove_style_all(btn);
-#if LV_DEMO_MUSIC_LARGE
-    lv_obj_set_size(btn, lv_pct(100), 110);
-#else
     lv_obj_set_size(btn, lv_pct(100), 60);
-#endif
 
     lv_obj_add_style(btn, &style_btn, 0);
     lv_obj_add_style(btn, &style_btn_pr, LV_STATE_PRESSED);
@@ -185,11 +171,6 @@ static lv_obj_t * add_list_btn(lv_obj_t * parent, uint32_t track_id)
     lv_obj_add_style(artist_label, &style_artist, 0);
     lv_obj_set_grid_cell(artist_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
-    lv_obj_t * time_label = lv_label_create(btn);
-    lv_label_set_text(time_label, time);
-    lv_obj_add_style(time_label, &style_time, 0);
-    lv_obj_set_grid_cell(time_label, LV_GRID_ALIGN_END, 2, 1, LV_GRID_ALIGN_CENTER, 0, 2);
-
     LV_IMG_DECLARE(img_lv_demo_music_list_border);
     lv_obj_t * border = lv_img_create(btn);
     lv_img_set_src(border, &img_lv_demo_music_list_border);
@@ -197,13 +178,13 @@ static lv_obj_t * add_list_btn(lv_obj_t * parent, uint32_t track_id)
     lv_obj_align(border, LV_ALIGN_BOTTOM_MID, 0, 0);
     lv_obj_add_flag(border, LV_OBJ_FLAG_IGNORE_LAYOUT);
 
-
     return btn;
 }
 
 
 static void btn_click_event_cb(lv_event_t * e)
 {
+    LV_LOG_USER("is here");
     lv_obj_t * btn = lv_event_get_target(e);
 
     uint32_t idx = lv_obj_get_child_id(btn);

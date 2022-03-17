@@ -10,9 +10,6 @@
 #if LV_USE_DEMO_MUSIC
 
 #include "lv_demo_music_list.h"
-#include "assets/spectrum_1.h"
-#include "assets/spectrum_2.h"
-#include "assets/spectrum_3.h"
 
 /*********************
  *      DEFINES
@@ -72,6 +69,7 @@ static lv_obj_t * genre_label;
 static lv_obj_t * time_obj;
 static lv_obj_t * album_img_obj;
 static lv_obj_t * slider_obj;
+static lv_style_t style_icon;
 static uint32_t spectrum_i = 0;
 static uint32_t spectrum_i_pause = 0;
 static uint32_t bar_ofs = 0;
@@ -111,11 +109,10 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     /*Create the content of the music player*/
     lv_obj_t * cont = create_cont(parent);
     create_wave_images(cont);
-    lv_obj_t * title_box = create_title_box(cont);
     lv_obj_t * icon_box = create_icon_box(cont);
+    lv_obj_t * title_box = create_title_box(cont);
     lv_obj_t * ctrl_box = create_ctrl_box(cont);
     lv_obj_t * handle_box = create_handle(cont);
-    // spectrum_obj = create_spectrum_obj(cont);
 
     /*Arrange the content into a grid*/
 #if LV_DEMO_MUSIC_LANDSCAPE == 0
@@ -123,13 +120,11 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     static const lv_coord_t grid_rows[] = {LV_DEMO_MUSIC_HANDLE_SIZE,     /*Spacing*/
                                            LV_GRID_FR(1),   /*Spacer*/
                                            LV_GRID_CONTENT, /*Title box*/
-                                           LV_GRID_FR(3),   /*Spacer*/
+                                           LV_GRID_FR(1),   /*Spacer*/
                                            LV_GRID_CONTENT, /*Icon box*/
-                                           LV_GRID_FR(3),   /*Spacer*/
-                                           LV_GRID_FR(25),   /*Spectrum obj*/
-                                           LV_GRID_FR(3),   /*Spacer*/
+                                           LV_GRID_FR(1),   /*Spacer*/
                                            LV_GRID_CONTENT, /*Control box*/
-                                           LV_GRID_FR(3),   /*Spacer*/
+                                           LV_GRID_FR(1),   /*Spacer*/
                                            LV_GRID_CONTENT, /*Handle box*/
                                            LV_GRID_FR(1),   /*Spacer*/
                                            LV_DEMO_MUSIC_HANDLE_SIZE,     /*Spacing*/
@@ -137,11 +132,11 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
 
     lv_obj_set_grid_dsc_array(cont, grid_cols, grid_rows);
     lv_obj_set_style_grid_row_align(cont, LV_GRID_ALIGN_SPACE_BETWEEN, 0);
-    lv_obj_set_grid_cell(title_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 2, 1);
-    lv_obj_set_grid_cell(icon_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 4, 1);
-    // lv_obj_set_grid_cell(spectrum_obj, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 6, 1);
-    lv_obj_set_grid_cell(ctrl_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 8, 1);
-    lv_obj_set_grid_cell(handle_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 10, 1);
+
+    lv_obj_set_grid_cell(icon_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 2, 1);
+    lv_obj_set_grid_cell(title_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 4, 1);
+    lv_obj_set_grid_cell(ctrl_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 6, 1);
+    lv_obj_set_grid_cell(handle_box, LV_GRID_ALIGN_STRETCH, 0, 1, LV_ALIGN_CENTER, 8, 1);
 #else
     /*Arrange the content into a grid*/
     static const lv_coord_t grid_cols[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
@@ -166,78 +161,28 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     lv_obj_set_grid_cell(handle_box, LV_GRID_ALIGN_STRETCH, 0, 2, LV_ALIGN_CENTER, 8, 1);
     lv_obj_set_grid_cell(spectrum_obj, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 1, 9);
 #endif
-    LV_LOG_USER("is here");
     sec_counter_timer = lv_timer_create(timer_cb, 1000, NULL);
     lv_timer_pause(sec_counter_timer);
-#if  0
-    sec_counter_timer = lv_timer_create(timer_cb, 1000, NULL);
-    lv_timer_pause(sec_counter_timer);
-
-    /*Animate in the content after the intro time*/
-    lv_anim_t a;
-
-    start_anim = true;
-
-    lv_timer_t * timer =  lv_timer_create(stop_start_anim, INTRO_TIME + 6000, NULL);
-    lv_timer_set_repeat_count(timer, 1);
-
-    lv_anim_init(&a);
-    lv_anim_set_path_cb(&a, lv_anim_path_bounce);
-    LV_LOG_USER("is here");
-
-    uint32_t i;
-    lv_anim_set_exec_cb(&a, start_anim_cb);
-    for(i = 0; i < BAR_CNT; i++) {
-        lv_anim_set_values(&a, LV_HOR_RES, 5);
-        lv_anim_set_delay(&a, INTRO_TIME - 200 + rnd_array[i] % 200);
-        lv_anim_set_time(&a, 2500 + rnd_array[i] % 500);
-        lv_anim_set_var(&a, &start_anim_values[i]);
-        lv_anim_start(&a);
-    }
-
-
-    LV_LOG_USER("is here +++++++++++");
-    lv_obj_fade_in(title_box, 1000, INTRO_TIME + 1000);
-    lv_obj_fade_in(icon_box, 1000, INTRO_TIME + 1000);
-    lv_obj_fade_in(ctrl_box, 1000, INTRO_TIME + 1000);
-    lv_obj_fade_in(handle_box, 1000, INTRO_TIME + 1000);
-    lv_obj_fade_in(album_img_obj, 800, INTRO_TIME + 1000);
-    lv_obj_fade_in(spectrum_obj, 0, INTRO_TIME);
-
-    lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
-    lv_anim_set_var(&a, album_img_obj);
-    lv_anim_set_time(&a, 1000);
-    lv_anim_set_delay(&a, INTRO_TIME + 1000);
-    lv_anim_set_values(&a, 1, LV_IMG_ZOOM_NONE);
-    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_img_set_zoom);
-    lv_anim_set_ready_cb(&a, NULL);
-    lv_anim_start(&a);
-
+#if 1
     /* Create an intro from a logo + label */
-    LV_IMG_DECLARE(img_lv_demo_music_logo);
+    LV_IMG_DECLARE(img_lv_music_logo);
     lv_obj_t * logo = lv_img_create(lv_scr_act());
-    lv_img_set_src(logo, &img_lv_demo_music_logo);
+    lv_img_set_src(logo, &img_lv_music_logo);
     lv_obj_move_foreground(logo);
+    lv_obj_fade_out(logo, 500, INTRO_TIME);
 
     lv_obj_t * title = lv_label_create(lv_scr_act());
-    lv_label_set_text(title, "LVGL Demo\nMusic player");
+    lv_label_set_text(title, "Espressif Music player");
     lv_obj_set_style_text_align(title, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_style_text_font(title, font_large, 0);
+    lv_obj_set_style_text_color(title, lv_color_hex(0xFF3034), 0);
     lv_obj_set_style_text_line_space(title, 8, 0);
     lv_obj_fade_out(title, 500, INTRO_TIME);
-    lv_obj_align_to(logo, spectrum_obj, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_align_to(title, logo, LV_ALIGN_OUT_LEFT_MID, -20, 0);
+    lv_obj_align_to(logo, NULL, LV_ALIGN_CENTER, 0, -30);
+    lv_obj_align_to(title, logo, LV_ALIGN_OUT_BOTTOM_MID, 0, 20);
 
-    lv_anim_set_path_cb(&a, lv_anim_path_ease_in);
-    lv_anim_set_var(&a, logo);
-    lv_anim_set_time(&a, 400);
-    lv_anim_set_delay(&a, INTRO_TIME + 800);
-    lv_anim_set_values(&a, LV_IMG_ZOOM_NONE, 10);
-    lv_anim_set_ready_cb(&a, lv_obj_del_anim_ready_cb);
-    lv_anim_start(&a);
 #endif
     lv_obj_update_layout(main_cont);
-    LV_LOG_ERROR("is here ---------------------");
 
     return main_cont;
 }
@@ -273,16 +218,6 @@ void _lv_demo_music_play(uint32_t id)
 void _lv_demo_music_resume(void)
 {
     playing = true;
-    // spectrum_i = spectrum_i_pause;
-    // lv_anim_t a;
-    // lv_anim_init(&a);
-    // lv_anim_set_values(&a, spectrum_i, spectrum_len - 1);
-    // lv_anim_set_exec_cb(&a, spectrum_anim_cb);
-    // // lv_anim_set_var(&a, spectrum_obj);
-    // lv_anim_set_time(&a, ((spectrum_len - spectrum_i) * 1000) / 30);
-    // lv_anim_set_playback_time(&a, 0);
-    // lv_anim_set_ready_cb(&a, spectrum_end_cb);
-    // lv_anim_start(&a);
     LV_LOG_USER("star resume");
     lv_timer_resume(sec_counter_timer);
     lv_slider_set_range(slider_obj, 0, _lv_demo_music_get_track_length(track_id));
@@ -294,9 +229,6 @@ void _lv_demo_music_pause(void)
     playing = false;
     spectrum_i_pause = spectrum_i;
     spectrum_i = 0;
-    // lv_anim_del(spectrum_obj, spectrum_anim_cb);
-    // lv_obj_invalidate(spectrum_obj);
-    // lv_img_set_zoom(album_img_obj, LV_IMG_ZOOM_NONE);
     lv_timer_pause(sec_counter_timer);
     lv_obj_clear_state(play_obj, LV_STATE_CHECKED);
 }
@@ -395,7 +327,7 @@ static lv_obj_t * create_title_box(lv_obj_t * parent)
 
     return cont;
 }
-static lv_style_t style_icon;
+
 static lv_obj_t * create_icon_box(lv_obj_t * parent)
 {
     lv_obj_t * cont = lv_obj_create(parent);
@@ -810,18 +742,18 @@ static lv_obj_t * album_img_create(lv_obj_t * parent)
     switch(track_id) {
     case 2:
         lv_img_set_src(img, &img_lv_demo_music_cover_3);
-        spectrum = spectrum_3;
-        spectrum_len = sizeof(spectrum_3) / sizeof(spectrum_3[0]);
+        // spectrum = spectrum_3;
+        // // // spectrum_len = sizeof(spectrum_3) / sizeof(spectrum_3[0]);
         break;
     case 1:
         lv_img_set_src(img, &img_lv_demo_music_cover_2);
-        spectrum = spectrum_2;
-        spectrum_len = sizeof(spectrum_2) / sizeof(spectrum_2[0]);
+        // // spectrum = spectrum_2;
+        // // // spectrum_len = sizeof(spectrum_2) / sizeof(spectrum_2[0]);
         break;
     case 0:
         lv_img_set_src(img, &img_lv_demo_music_cover_1);
-        spectrum = spectrum_1;
-        spectrum_len = sizeof(spectrum_1) / sizeof(spectrum_1[0]);
+        // // spectrum = spectrum_1;
+        // // // spectrum_len = sizeof(spectrum_1) / sizeof(spectrum_1[0]);
         break;
     }
     lv_img_set_antialias(img, false);
