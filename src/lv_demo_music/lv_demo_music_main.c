@@ -14,18 +14,18 @@
 /*********************
  *      DEFINES
  *********************/
-#define ACTIVE_TRACK_CNT       3
-#define INTRO_TIME      2000
-#define BAR_COLOR1      lv_color_hex(0xe9dbfc)
-#define BAR_COLOR2      lv_color_hex(0x6f8af6)
-#define BAR_COLOR3      lv_color_hex(0xffffff)
+#define ACTIVE_TRACK_CNT    3
+#define INTRO_TIME          1500
+#define BAR_COLOR1          lv_color_hex(0xe9dbfc)
+#define BAR_COLOR2          lv_color_hex(0x6f8af6)
+#define BAR_COLOR3          lv_color_hex(0xffffff)
 #define BAR_COLOR1_STOP     160
 #define BAR_COLOR2_STOP     200
 #define BAR_COLOR3_STOP     (2 * LV_HOR_RES / 3)
-#define BAR_CNT          20
-#define DEG_STEP         (180/BAR_CNT)
-#define BAND_CNT         4
-#define BAR_PER_BAND_CNT  (BAR_CNT / BAND_CNT)
+#define BAR_CNT             20
+#define DEG_STEP            (180/BAR_CNT)
+#define BAND_CNT            4
+#define BAR_PER_BAND_CNT    (BAR_CNT / BAND_CNT)
 
 
 /**********************
@@ -39,22 +39,21 @@ static lv_obj_t * create_cont(lv_obj_t * parent);
 static void create_wave_images(lv_obj_t * parent);
 static lv_obj_t * create_title_box(lv_obj_t * parent);
 static lv_obj_t * create_icon_box(lv_obj_t * parent);
-static lv_obj_t * create_spectrum_obj(lv_obj_t * parent);
 static lv_obj_t * create_ctrl_box(lv_obj_t * parent);
 static lv_obj_t * create_handle(lv_obj_t * parent);
 
-static void spectrum_anim_cb(void * a, int32_t v);
-static void start_anim_cb(void * a, int32_t v);
-static void spectrum_draw_event_cb(lv_event_t * e);
-static lv_obj_t * album_img_create(lv_obj_t * parent);
-static void album_gesture_event_cb(lv_event_t * e);
+
+static void sdcard_event_click_cb(lv_event_t * e);
+static void fm_event_click_cb(lv_event_t * e);
+static void setting_event_click_cb(lv_event_t * e);
+static void volume_dec_event_click_cb(lv_event_t * e);
+static void volume_inc_event_click_cb(lv_event_t * e);
+
 static void play_event_click_cb(lv_event_t * e);
 static void prev_click_event_cb(lv_event_t * e);
 static void next_click_event_cb(lv_event_t * e);
 static void timer_cb(lv_timer_t * t);
 static void track_load(uint32_t id);
-static void stop_start_anim(lv_timer_t * t);
-static void spectrum_end_cb(lv_anim_t * a);
 static int32_t get_cos(int32_t deg, int32_t a);
 static int32_t get_sin(int32_t deg, int32_t a);
 
@@ -62,12 +61,10 @@ static int32_t get_sin(int32_t deg, int32_t a);
  *  STATIC VARIABLES
  **********************/
 static lv_obj_t * main_cont;
-static lv_obj_t * spectrum_obj;
 static lv_obj_t * title_label;
 static lv_obj_t * artist_label;
 static lv_obj_t * genre_label;
 static lv_obj_t * time_obj;
-static lv_obj_t * album_img_obj;
 static lv_obj_t * slider_obj;
 static lv_style_t style_icon;
 static uint32_t spectrum_i = 0;
@@ -81,12 +78,7 @@ static const lv_font_t * font_small;
 static const lv_font_t * font_large;
 static uint32_t track_id;
 static bool playing;
-static bool start_anim;
-static lv_coord_t start_anim_values[40];
 static lv_obj_t * play_obj;
-static const uint16_t (* spectrum)[4];
-static uint32_t spectrum_len;
-static const uint16_t rnd_array[30] = {994, 285, 553, 11, 792, 707, 966, 641, 852, 827, 44, 352, 146, 581, 490, 80, 729, 58, 695, 940, 724, 561, 124, 653, 27, 292, 557, 506, 382, 199};
 
 /**********************
  *      MACROS
@@ -164,12 +156,17 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     sec_counter_timer = lv_timer_create(timer_cb, 1000, NULL);
     lv_timer_pause(sec_counter_timer);
 #if 1
+    lv_obj_fade_in(title_box, 1000, INTRO_TIME + 300);
+    lv_obj_fade_in(icon_box, 1000, INTRO_TIME + 300);
+    lv_obj_fade_in(ctrl_box, 1000, INTRO_TIME + 300);
+    lv_obj_fade_in(handle_box, 1000, INTRO_TIME + 300);
+
     /* Create an intro from a logo + label */
     LV_IMG_DECLARE(img_lv_music_logo);
     lv_obj_t * logo = lv_img_create(lv_scr_act());
     lv_img_set_src(logo, &img_lv_music_logo);
     lv_obj_move_foreground(logo);
-    lv_obj_fade_out(logo, 500, INTRO_TIME);
+    lv_obj_fade_out(logo, 300, INTRO_TIME);
 
     lv_obj_t * title = lv_label_create(lv_scr_act());
     lv_label_set_text(title, "Espressif Music player");
@@ -177,7 +174,7 @@ lv_obj_t * _lv_demo_music_main_create(lv_obj_t * parent)
     lv_obj_set_style_text_font(title, font_large, 0);
     lv_obj_set_style_text_color(title, lv_color_hex(0xFF3034), 0);
     lv_obj_set_style_text_line_space(title, 8, 0);
-    lv_obj_fade_out(title, 500, INTRO_TIME);
+    lv_obj_fade_out(title, 300, INTRO_TIME);
     lv_obj_align_to(logo, NULL, LV_ALIGN_CENTER, 0, -30);
     lv_obj_align_to(title, logo, LV_ALIGN_OUT_BOTTOM_MID, 0, 20);
 
@@ -336,42 +333,39 @@ static lv_obj_t * create_icon_box(lv_obj_t * parent)
     lv_obj_set_flex_flow(cont, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(cont, LV_FLEX_ALIGN_SPACE_EVENLY, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
 
-    lv_obj_t * icon;
     //LV_SYMBOL_SD_CARD
-    lv_obj_t * call_icn = lv_label_create(cont);
-    lv_obj_add_style(call_icn, &style_icon, 0);
-    lv_label_set_text(call_icn, LV_SYMBOL_SD_CARD);
+    lv_obj_t * sdcard_icon = lv_label_create(cont);
+    lv_obj_add_style(sdcard_icon, &style_icon, 0);
+    lv_label_set_text(sdcard_icon, LV_SYMBOL_SD_CARD);
+    lv_obj_add_event_cb(sdcard_icon, sdcard_event_click_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_flag(sdcard_icon, LV_OBJ_FLAG_CLICKABLE);
 
     LV_IMG_DECLARE(img_lv_music_fm_icon);
-    icon = lv_img_create(cont);
-    lv_img_set_src(icon, &img_lv_music_fm_icon);
+    lv_obj_t* fm_icon = lv_img_create(cont);
+    lv_img_set_src(fm_icon, &img_lv_music_fm_icon);
+    lv_obj_add_event_cb(fm_icon, fm_event_click_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_flag(fm_icon, LV_OBJ_FLAG_CLICKABLE);
 
     lv_obj_t * setting_icn = lv_label_create(cont);
     lv_obj_add_style(setting_icn, &style_icon, 0);
     lv_label_set_text(setting_icn, LV_SYMBOL_SETTINGS);
+    lv_obj_add_event_cb(setting_icn, setting_event_click_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_flag(setting_icn, LV_OBJ_FLAG_CLICKABLE);
 
-    lv_obj_t * volume_icn = lv_label_create(cont);
-    lv_obj_add_style(volume_icn, &style_icon, 0);
-    lv_label_set_text(volume_icn, LV_SYMBOL_VOLUME_MAX);
+    lv_obj_t * volume_dec_icn = lv_label_create(cont);
+    lv_obj_add_style(volume_dec_icn, &style_icon, 0);
+    lv_label_set_text(volume_dec_icn, LV_SYMBOL_VOLUME_MID);
+    lv_obj_add_event_cb(volume_dec_icn, volume_dec_event_click_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_flag(volume_dec_icn, LV_OBJ_FLAG_CLICKABLE);
+
+
+    lv_obj_t * volume_inc_icn = lv_label_create(cont);
+    lv_obj_add_style(volume_inc_icn, &style_icon, 0);
+    lv_label_set_text(volume_inc_icn, LV_SYMBOL_VOLUME_MAX);
+    lv_obj_add_event_cb(volume_inc_icn, volume_inc_event_click_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_flag(volume_inc_icn, LV_OBJ_FLAG_CLICKABLE);
 
     return cont;
-}
-
-static lv_obj_t * create_spectrum_obj(lv_obj_t * parent)
-{
-    /*Create the spectrum visualizer*/
-    lv_obj_t * obj = lv_obj_create(parent);
-    lv_obj_remove_style_all(obj);
-#if LV_DEMO_MUSIC_LARGE
-    lv_obj_set_height(obj, 500);
-#else
-    lv_obj_set_height(obj, 200);
-#endif
-    lv_obj_clear_flag(obj, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_add_event_cb(obj, spectrum_draw_event_cb, LV_EVENT_ALL, NULL);
-    lv_obj_refresh_ext_draw_size(obj);
-    album_img_obj = album_img_create(obj);
-    return obj;
 }
 
 static lv_obj_t * create_ctrl_box(lv_obj_t * parent)
@@ -409,6 +403,7 @@ static lv_obj_t * create_ctrl_box(lv_obj_t * parent)
     lv_img_set_src(icon, &img_lv_demo_music_btn_prev);
     lv_obj_set_grid_cell(icon, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_add_event_cb(icon, prev_click_event_cb, LV_EVENT_CLICKED, NULL);
+    lv_obj_add_flag(icon, LV_OBJ_FLAG_CLICKABLE);
 
     play_obj = lv_imgbtn_create(cont);
     lv_imgbtn_set_src(play_obj, LV_IMGBTN_STATE_RELEASED, NULL, &img_lv_demo_music_btn_play, NULL);
@@ -507,270 +502,32 @@ static void track_load(uint32_t id)
     lv_label_set_text(artist_label, _lv_demo_music_get_artist(track_id));
     lv_label_set_text(genre_label, _lv_demo_music_get_genre(track_id));
 
-    lv_obj_fade_out(album_img_obj, 500, 0);
-#if 0
-    lv_anim_t a;
-    lv_anim_init(&a);
-    lv_anim_set_var(&a, album_img_obj);
-    lv_anim_set_time(&a, 500);
-    lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
-#if LV_DEMO_MUSIC_LANDSCAPE
-    if(next) {
-        lv_anim_set_values(&a, 0, - LV_HOR_RES / 7);
-    } else {
-        lv_anim_set_values(&a, 0, LV_HOR_RES / 7);
-    }
-#else
-    if(next) {
-        lv_anim_set_values(&a, 0, - LV_HOR_RES / 2);
-    } else {
-        lv_anim_set_values(&a, 0, LV_HOR_RES / 2);
-    }
-#endif
-    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_obj_set_x);
-    lv_anim_set_ready_cb(&a, lv_obj_del_anim_ready_cb);
-    lv_anim_start(&a);
-
-    lv_anim_set_path_cb(&a, lv_anim_path_linear);
-    lv_anim_set_var(&a, album_img_obj);
-    lv_anim_set_time(&a, 500);
-    lv_anim_set_values(&a, LV_IMG_ZOOM_NONE, LV_IMG_ZOOM_NONE / 2);
-    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_img_set_zoom);
-    lv_anim_set_ready_cb(&a, NULL);
-    lv_anim_start(&a);
-
-    // album_img_obj = album_img_create(spectrum_obj);
-    // lv_obj_fade_in(album_img_obj, 500, 100);
-
-    lv_anim_set_path_cb(&a, lv_anim_path_overshoot);
-    // lv_anim_set_var(&a, album_img_obj);
-    lv_anim_set_time(&a, 500);
-    lv_anim_set_delay(&a, 100);
-    lv_anim_set_values(&a, LV_IMG_ZOOM_NONE / 4, LV_IMG_ZOOM_NONE);
-    lv_anim_set_exec_cb(&a, (lv_anim_exec_xcb_t) lv_img_set_zoom);
-    lv_anim_set_ready_cb(&a, NULL);
-    lv_anim_start(&a);
-#endif
+    // lv_obj_fade_out(album_img_obj, 500, 0);
 }
 
-int32_t get_cos(int32_t deg, int32_t a)
+static void sdcard_event_click_cb(lv_event_t * e)
 {
-    int32_t r = (lv_trigo_cos(deg) * a);
-
-    r += LV_TRIGO_SIN_MAX / 2;
-    return r >> LV_TRIGO_SHIFT;
+    LV_LOG_USER("IS here");
 }
 
-int32_t get_sin(int32_t deg, int32_t a)
+static void fm_event_click_cb(lv_event_t * e)
 {
-    int32_t r = lv_trigo_sin(deg) * a;
-
-    r += LV_TRIGO_SIN_MAX / 2;
-    return r >> LV_TRIGO_SHIFT;
-
+    LV_LOG_USER("IS here");
 }
 
-static void spectrum_draw_event_cb(lv_event_t * e)
+static void setting_event_click_cb(lv_event_t * e)
 {
-    lv_event_code_t code = lv_event_get_code(e);
-
-    if(code == LV_EVENT_REFR_EXT_DRAW_SIZE) {
-#if LV_DEMO_MUSIC_LANDSCAPE
-        lv_event_set_ext_draw_size(e, LV_HOR_RES);
-#else
-        lv_event_set_ext_draw_size(e, LV_VER_RES);
-#endif
-    }
-    else if(code == LV_EVENT_COVER_CHECK) {
-        lv_event_set_cover_res(e, LV_COVER_RES_NOT_COVER);
-    }
-    else if(code == LV_EVENT_DRAW_POST) {
-        lv_obj_t * obj = lv_event_get_target(e);
-        const lv_area_t * clip_area = lv_event_get_param(e);
-
-        lv_opa_t opa = lv_obj_get_style_opa(obj, LV_PART_MAIN);
-        if(opa < LV_OPA_MIN) return;
-
-        lv_point_t poly[4];
-        lv_point_t center;
-        center.x = obj->coords.x1 + lv_obj_get_width(obj) / 2;
-        center.y = obj->coords.y1 + lv_obj_get_height(obj) / 2;
-
-        lv_draw_rect_dsc_t draw_dsc;
-        lv_draw_rect_dsc_init(&draw_dsc);
-        draw_dsc.bg_opa = LV_OPA_COVER;
-
-        uint16_t r[64];
-        uint32_t i;
-
-        lv_coord_t min_a = 5;
-#if LV_DEMO_MUSIC_LARGE == 0
-        lv_coord_t r_in = 77;
-#else
-        lv_coord_t r_in = 160;
-#endif
-        r_in = (r_in * lv_img_get_zoom(album_img_obj)) >> 8;
-        for(i = 0; i < BAR_CNT; i++) r[i] = r_in + min_a;
-
-        uint32_t s;
-        for(s = 0; s < 4; s++) {
-            uint32_t f;
-            uint32_t band_w = 0;    /*Real number of bars in this band.*/
-            switch(s) {
-            case 0:
-                band_w = 20;
-                break;
-            case 1:
-                band_w = 8;
-                break;
-            case 2:
-                band_w = 4;
-                break;
-            case 3:
-                band_w = 2;
-                break;
-            }
-
-            /* Add "side bars" with cosine characteristic.*/
-            for(f = 0; f < band_w; f++) {
-                uint32_t ampl_main = spectrum[spectrum_i][s];
-                int32_t ampl_mod = get_cos(f * 360 / band_w + 180, 180) + 180;
-                int32_t t = BAR_PER_BAND_CNT * s - band_w / 2 + f;
-                if(t < 0) t = BAR_CNT + t;
-                if(t >= BAR_CNT) t = t - BAR_CNT;
-                r[t] += (ampl_main * ampl_mod) >> 9;
-            }
-        }
-
-        uint32_t amax = 20;
-        int32_t animv = spectrum_i - spectrum_lane_ofs_start;
-        if(animv > amax) animv = amax;
-        for(i = 0; i < BAR_CNT; i++) {
-            uint32_t deg_space = 1;
-            uint32_t deg = i * DEG_STEP + 90;
-            uint32_t j =  (i + bar_rot + rnd_array[bar_ofs %10]) % BAR_CNT;
-            uint32_t k = (i + bar_rot + rnd_array[(bar_ofs + 1) % 10]) % BAR_CNT;
-
-            uint32_t v = (r[k] * animv + r[j] * (amax - animv)) / amax;
-            if(start_anim) {
-                v = r_in + start_anim_values[i];
-                deg_space = v >> 7;
-                if(deg_space < 1) deg_space = 1;
-            }
-
-            if(v < BAR_COLOR1_STOP) draw_dsc.bg_color = BAR_COLOR1;
-            else if(v > BAR_COLOR3_STOP) draw_dsc.bg_color = BAR_COLOR3;
-            else if(v > BAR_COLOR2_STOP) draw_dsc.bg_color = lv_color_mix(BAR_COLOR3, BAR_COLOR2, ((v - BAR_COLOR2_STOP) * 255) / (BAR_COLOR3_STOP-BAR_COLOR2_STOP));
-            else draw_dsc.bg_color = lv_color_mix(BAR_COLOR2, BAR_COLOR1, ((v - BAR_COLOR1_STOP) * 255) / (BAR_COLOR2_STOP - BAR_COLOR1_STOP));
-
-            uint32_t di = deg + deg_space;
-
-            int32_t x1_out = get_cos(di, v);
-            poly[0].x = center.x + x1_out;
-            poly[0].y = center.y + get_sin(di, v);
-
-            int32_t x1_in = get_cos(di, r_in);
-            poly[1].x = center.x + x1_in;
-            poly[1].y = center.y + get_sin(di, r_in);
-            di += DEG_STEP - deg_space * 2;
-
-            int32_t x2_in = get_cos(di, r_in);
-            poly[2].x = center.x + x2_in;
-            poly[2].y = center.y + get_sin(di, r_in);
-
-            int32_t x2_out = get_cos(di, v);
-            poly[3].x = center.x + x2_out;
-            poly[3].y = center.y + get_sin(di, v);
-
-            lv_draw_polygon(poly, 4, clip_area, &draw_dsc);
-
-            poly[0].x = center.x - x1_out;
-            poly[1].x = center.x - x1_in;
-            poly[2].x = center.x - x2_in;
-            poly[3].x = center.x - x2_out;
-            lv_draw_polygon(poly, 4, clip_area, &draw_dsc);
-        }
-    }
+    LV_LOG_USER("IS here");
 }
 
-static void spectrum_anim_cb(void * a, int32_t v)
+static void volume_dec_event_click_cb(lv_event_t * e)
 {
-    lv_obj_t * obj = a;
-    if(start_anim) {
-        lv_obj_invalidate(obj);
-        return;
-    }
-
-    spectrum_i = v;
-    lv_obj_invalidate(obj);
-
-    static uint32_t bass_cnt = 0;
-    static int32_t last_bass = -1000;
-    static int32_t dir = 1;
-    if(spectrum[spectrum_i][0] > 12) {
-        if(spectrum_i-last_bass > 5) {
-            bass_cnt++;
-            last_bass = spectrum_i;
-            if(bass_cnt >= 2) {
-                bass_cnt = 0;
-                spectrum_lane_ofs_start = spectrum_i;
-                bar_ofs++;
-            }
-        }
-    }
-    if(spectrum[spectrum_i][0] < 4) bar_rot+= dir;
-
-    lv_img_set_zoom(album_img_obj, LV_IMG_ZOOM_NONE + spectrum[spectrum_i][0]);
+    LV_LOG_USER("IS here");
 }
 
-static void start_anim_cb(void * a, int32_t v)
+static void volume_inc_event_click_cb(lv_event_t * e)
 {
-    lv_coord_t * av = a;
-    *av = v;
-    // lv_obj_invalidate(spectrum_obj);
-}
-
-static lv_obj_t * album_img_create(lv_obj_t * parent)
-{
-    LV_IMG_DECLARE(img_lv_demo_music_cover_1);
-    LV_IMG_DECLARE(img_lv_demo_music_cover_2);
-    LV_IMG_DECLARE(img_lv_demo_music_cover_3);
-
-    lv_obj_t * img;
-    img = lv_img_create(parent);
-
-    switch(track_id) {
-    case 2:
-        lv_img_set_src(img, &img_lv_demo_music_cover_3);
-        // spectrum = spectrum_3;
-        // // // spectrum_len = sizeof(spectrum_3) / sizeof(spectrum_3[0]);
-        break;
-    case 1:
-        lv_img_set_src(img, &img_lv_demo_music_cover_2);
-        // // spectrum = spectrum_2;
-        // // // spectrum_len = sizeof(spectrum_2) / sizeof(spectrum_2[0]);
-        break;
-    case 0:
-        lv_img_set_src(img, &img_lv_demo_music_cover_1);
-        // // spectrum = spectrum_1;
-        // // // spectrum_len = sizeof(spectrum_1) / sizeof(spectrum_1[0]);
-        break;
-    }
-    lv_img_set_antialias(img, false);
-    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_add_event_cb(img, album_gesture_event_cb, LV_EVENT_GESTURE, NULL);
-    lv_obj_clear_flag(img, LV_OBJ_FLAG_GESTURE_BUBBLE);
-    lv_obj_add_flag(img, LV_OBJ_FLAG_CLICKABLE);
-
-    return img;
-
-}
-
-static void album_gesture_event_cb(lv_event_t * e)
-{
-    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
-    if(dir == LV_DIR_LEFT) _lv_demo_music_album_next(true);
-    if(dir == LV_DIR_RIGHT) _lv_demo_music_album_next(false);
+    LV_LOG_USER("IS here");
 }
 
 static void play_event_click_cb(lv_event_t * e)
@@ -785,8 +542,7 @@ static void play_event_click_cb(lv_event_t * e)
 
 static void prev_click_event_cb(lv_event_t * e)
 {
-    LV_LOG_USER("next_click_event_cb prev");
-    // _lv_demo_music_album_next(false);
+    LV_LOG_USER("prev_click_event_cb prev");
 }
 
 static void next_click_event_cb(lv_event_t * e)
@@ -794,10 +550,8 @@ static void next_click_event_cb(lv_event_t * e)
     lv_event_code_t code = lv_event_get_code(e);
     LV_LOG_USER("next_click_event_cb next");
     if(code == LV_EVENT_CLICKED) {
-        // _lv_demo_music_album_next(true);
     }
 }
-
 
 static void timer_cb(lv_timer_t * t)
 {
@@ -806,16 +560,38 @@ static void timer_cb(lv_timer_t * t)
     lv_slider_set_value(slider_obj, time, LV_ANIM_ON);
 }
 
-static void spectrum_end_cb(lv_anim_t * a)
-{
-    _lv_demo_music_album_next(true);
-}
 
 
-static void stop_start_anim(lv_timer_t * t)
+#if 0
+static void slider_event_cb(lv_event_t * e);
+static lv_obj_t * slider_label;
+
+/**
+ * A default slider with a label displaying the current value
+ */
+void lv_example_slider_12(void)
 {
-    start_anim = false;
-    // lv_obj_refresh_ext_draw_size(spectrum_obj);
+    /*Create a slider in the center of the display*/
+    lv_obj_t * slider = lv_slider_create(lv_scr_act());
+    lv_obj_center(slider);
+    lv_obj_add_event_cb(slider, slider_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    /*Create a label below the slider*/
+    slider_label = lv_label_create(lv_scr_act());
+    lv_label_set_text(slider_label, "0%");
+
+    lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 }
+
+static void slider_event_cb(lv_event_t * e)
+{
+    lv_obj_t * slider = lv_event_get_target(e);
+    char buf[8];
+    lv_snprintf(buf, sizeof(buf), "%d%%", (int)lv_slider_get_value(slider));
+    lv_label_set_text(slider_label, buf);
+    lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+}
+#endif
+
 #endif /*LV_USE_DEMO_MUSIC*/
 
